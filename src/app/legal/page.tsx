@@ -1,21 +1,24 @@
-import { Layout } from "@/components/Layout";
-import LegalPageFlip from "@/components/legal/legalpageflip";
-import { getLegalPageData } from "@/api/legal";
+import { getPolicies, Policy } from "@/lib/policy";
+import LegalPageClient from "./LegalPageClient";
 
-export const dynamic = "force-dynamic";
+function sortPolicies(policies: Policy[]) {
+  return [...policies].sort((a, b) => {
+    const dateA = new Date(a.effectiveFrom).getTime();
+    const dateB = new Date(b.effectiveFrom).getTime();
+
+    if (dateB !== dateA) return dateB - dateA;
+    return b.policyVersion - a.policyVersion;
+  });
+}
 
 export default async function LegalPage() {
-  const data = await getLegalPageData();
+  const response = await getPolicies();
 
-  return (
-    <Layout>
-      <LegalPageFlip
-        title={data.title}
-        subtitle={data.subtitle}
-        description={data.description}
-        updatedAt={data.updatedAt}
-        sections={data.sections}
-      />
-    </Layout>
-  );
+  const rawPolicies: Policy[] = Array.isArray(response?.data?.content)
+    ? response.data.content
+    : [];
+
+  const policies = sortPolicies(rawPolicies);
+
+  return <LegalPageClient policies={policies} />;
 }
